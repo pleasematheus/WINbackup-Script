@@ -45,7 +45,7 @@ echo  --------------------------------------------------
 set /p opcao=  Digite sua opcao: 
 
 if "!opcao!"=="1" goto menuArquivos
-if "!opcao!"=="2" goto backupDrivers
+if "!opcao!"=="2" goto menuDrivers
 if "!opcao!"=="3" goto menuNavegadores
 if "!opcao!"=="4" goto abrirTutorial
 if "!opcao!"=="0" goto sair
@@ -65,12 +65,9 @@ echo  +==================================================+
 echo  ^|          BACKUP DE ARQUIVOS PESSOAIS            ^|
 echo  +==================================================+
 echo.
-echo   C  -  Backup Completo
-echo          (Documentos, Imagens, Musicas, Videos,
-echo           Downloads e Desktop)
+echo   C  -  Backup Completo (Documentos, Imagens, Musicas, Videos, Downloads e Desktop)
 echo.
-echo   S  -  Backup Seletivo
-echo          (Escolher quais pastas copiar)
+echo   S  -  Backup Seletivo (Escolher quais pastas copiar)
 echo.
 echo   0  -  Voltar
 echo.
@@ -198,48 +195,98 @@ goto menu
 :: ================================================================
 ::                  2 - BACKUP DE DRIVERS
 :: ================================================================
-:backupDrivers
+:menuDrivers
 cls
 echo.
-echo  +==================================================+
-echo  ^|              BACKUP DE DRIVERS                  ^|
-echo  +==================================================+
+echo  ===================================================
+echo    DRIVERS - backup/restauracao
+echo  ===================================================
+echo.
+echo   1 - Fazer backup dos drivers
+echo   2 - Restaurar drivers
+echo   0 - Voltar ao menu principal
+echo.
+set /p opcaoDriver=  Digite sua opcao: 
+
+if "!opcaoDriver!"=="1" goto selecionarPasta
+if "!opcaoDriver!"=="2" goto restaurarDrivers
+if "!opcaoDriver!"=="0" goto menu
+
+echo Opcao invalida. Tente novamente.
+timeout /t 2 >nul
+goto menuDrivers
+
+:: ================= BACKUP DOS DRIVERS =================
+:selecionarPasta
 echo.
 echo  --------------------------------------------------
 echo  Informe o destino do backup. Exemplo: L:\backup
+echo  Os drivers serao salvos em uma subpasta DRIVERS.
 echo  --------------------------------------------------
-set /p destDrv=  Destino: 
+set /p backupBase=  Destino: 
+echo [%date% %time%] [INFO] Destino informado pelo usuario: "%backupBase%" >> "%logFile%"
 
-if "!destDrv!"=="" (
+if "!backupBase!"=="" (
     echo  O destino nao pode ser vazio.
-    goto backupDrivers
+    goto selecionarPasta
 )
-if not exist "!destDrv!" (
+
+if not exist "!backupBase!" (
     echo  Destino nao encontrado. Verifique se o dispositivo
     echo  esta conectado e tente novamente.
     pause
-    goto backupDrivers
+    goto selecionarPasta
 )
 
-cls
-echo.
-echo  Iniciando backup dos drivers...
-echo  Destino: !destDrv!\Drivers
-echo.
-echo [%date% %time%] Backup de drivers para "!destDrv!\Drivers" >> "%logFile%"
+set "backupDir=!backupBase!\DRIVERS"
 
-if not exist "!destDrv!\Drivers" mkdir "!destDrv!\Drivers"
-dism /online /export-driver /destination:"!destDrv!\Drivers"
+if not exist "!backupDir!" (
+    mkdir "!backupDir!" || (
+        echo  Falha ao criar a pasta DRIVERS. Verifique o caminho e tente novamente.
+        echo [%date% %time%] [ERRO] Falha ao criar a pasta "!backupDir!" >> "%logFile%"
+        pause
+        goto selecionarPasta
+    )
+)
 
+:iniciarBackup
 echo.
-echo  --------------------------------------------------
-echo  Backup de drivers concluido!
-echo  Destino: !destDrv!\Drivers
-echo  --------------------------------------------------
-echo [%date% %time%] Backup de drivers concluido >> "%logFile%"
+echo  Iniciando o backup dos drivers...
+echo  Destino: !backupDir!
+echo [%date% %time%] [INFO] Iniciando backup para: "!backupDir!" >> "%logFile%"
+
+dism /online /export-driver /destination:"!backupDir!"
+echo  Backup concluido. Os drivers foram salvos em "!backupDir!".
+echo [%date% %time%] [INFO] Backup concluido em: "!backupDir!" >> "%logFile%"
 pause
 goto menu
 
+:: ================= RESTAURACAO DOS DRIVERS =================
+:restaurarDrivers
+echo.
+set /p restoreDir=Digite o caminho onde estao os drivers para restauracao: 
+echo [%date% %time%] [INFO] Pasta definida para restauracao: "%restoreDir%" >> "%logFile%"
+
+if not exist "%restoreDir%" (
+    echo Caminho da pasta de restauracao "%restoreDir%" invalido ou inexistente.
+    echo [%date% %time%] [ERRO] Caminho de restauracao invalido: "%restoreDir%" >> "%logFile%"
+    pause
+    goto menu
+)
+
+echo Iniciando a restauracao dos drivers de "%restoreDir%"...
+echo [%date% %time%] [INFO] Iniciando restauracao dos drivers >> "%logFile%"
+
+for /r "%restoreDir%" %%f in (*.inf) do (
+    echo Instalando driver: %%f
+    echo [%date% %time%] [INFO] Instalando driver: %%f >> "%logFile%"
+    pnputil /add-driver "%%f" /install
+)
+
+echo Restauracao concluida.
+echo [%date% %time%] [INFO] Restauracao concluida para "%restoreDir%" >> "%logFile%"
+pause
+goto menu
 
 :: ================================================================
 ::                  3 - BACKUP DE NAVEGADORES
@@ -621,7 +668,7 @@ exit /b
 :abrirTutorial
 echo.
 echo  Abrindo Canal WINchester no YouTube...
-start https://youtu.be/ymOwOXdzHGQ
+start https://youtu.be/bxRnwJxpm_Q
 timeout /t 3 >nul
 goto menu
 
