@@ -28,7 +28,7 @@ jobs:
           & $converter.FullName `
             /bat main.bat `
             /exe WINbackup.exe `
-            /icon src\icon.ico `
+            /icon src\icon\icon.ico `
             /include src `
             /include system.env `
             /uac-admin `
