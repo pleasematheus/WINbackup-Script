@@ -31,6 +31,10 @@ jobs:
       - name: Convert main.bat to WINbackup.exe
         run: |
           $converter = Get-ChildItem -Path "converter" -Recurse -Filter "Bat_To_Exe_Converter.exe" | Select-Object -First 1
+          if (-not $converter) {
+            Write-Error "Bat_To_Exe_Converter.exe not found in 'converter' directory. Ensure the ZIP layout is correct and the executable is present."
+            exit 1
+          }
           & $converter.FullName `
             /bat main.bat `
             /exe WINbackup.exe `
